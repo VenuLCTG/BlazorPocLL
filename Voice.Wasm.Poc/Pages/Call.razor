@@ -1,0 +1,111 @@
+﻿@page "/Call"
+@inject IJSRuntime JS
+
+<h3>Call</h3>
+
+<hr />
+<p class="text-center text-light">@(message != "" ? message : "Standing by")</p>
+
+<div class="row">
+    <EditForm Model="@myform">
+        <RadzenCard Style="width: 500px" class="rz-background-color-info-lighter">
+            <RadzenRow>
+        <div class="col-lg-12">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Server:</label>
+                    <input type="text" class="form-control" @bind-value="myform.ServerText" />
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>User Name:</label>
+                    <input type="text" class="form-control" @bind-value="myform.UserName" />
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <label>Password:</label>
+                <input type="text" class="form-control" @bind-value="myform.Password" />
+                <RadzenButton class="btn btn-primary" Click="Register">Register</RadzenButton>
+                <p role="status">Status: @response</p>
+            </div>
+        </div>
+
+          
+        <div class="col-lg-12">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Phone Number:</label>
+                    <input type="text" class="form-control" @bind-value="myform.PhoneNumber" />
+                </div>
+            </div>
+            <div class="col-lg-6">
+                        <button class="btn btn-primary" Click="MakeACall">Dail</button>
+            </div>
+            <div class="col-lg-6">
+                        <button class="btn btn-primary" ButtonStyle="ButtonStyle.Success" Click="AcceptCall">Accept </button>
+                        <button class="btn btn-primary" Click="DisconnectCall">End </button>
+            </div>
+        </div>
+        </RadzenRow>
+        </RadzenCard>
+    </EditForm>
+</div>
+
+
+
+@code
+{
+    public string response;
+    private string message = "";
+    private bool IsRinging = false;
+    public MyModel myform = new MyModel();
+    public class MyModel
+    {
+        public string ServerText { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
+        public string PhoneNumber { get; set; }
+        public bool RegFlag { get; set; }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        myform.ServerText = "testsipclient.sip.twilio.com";
+        myform.Password = "TestPOC@123456";
+        // await JS.InvokeAsync<bool>("pageLoad");
+    }
+    public async void Register()
+    {
+        //string[] parameters = { myform.ServerText, myform.UserName, myform.Password };
+        //response = new(await JS.InvokeAsync<string>("console.log('hello')",myform.ServerText,myform.UserName,myform.Password));
+        //await JS.InvokeAsync<object>("start", parameters,true);
+        myform.RegFlag = await JS.InvokeAsync<bool>("Register", myform.ServerText, myform.UserName, myform.Password);
+        message = $"Calling {myform.UserName}";
+        //await Task.Delay(500);
+        if (myform.RegFlag)
+        {
+            response = "Registered";
+        }
+        else
+        {
+            response = "Registion failed";
+        }
+    }
+    public async void MakeACall()
+    {
+        if (myform.RegFlag)
+        {
+            message = $"Calling {myform.PhoneNumber}";
+            var callStatus = await JS.InvokeAsync<bool>("makeACall", myform.PhoneNumber);
+            IsRinging = true;
+        }
+    }
+    private async void AcceptCall()
+    {
+        await JS.InvokeAsync<object>("acceptCall");
+    }
+    private async void DisconnectCall()
+    {
+        await JS.InvokeAsync<object>("disconnectCall");
+    }
+}
